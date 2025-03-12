@@ -1,11 +1,9 @@
-// Import necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { FolderTree, Plus, Edit2, Trash, ChevronRight, ChevronDown, Box, AlertCircle } from 'lucide-react';
 import { AddCategoryModal } from '../components/AddCategoryModal';
 import { EditCategoryModal } from '../components/EditCategoryModal';
 
-// Define the Category type
 type Category = {
   id: string;
   name: string;
@@ -19,9 +17,7 @@ type Category = {
   };
 };
 
-// Main Categories component
 export function Categories() {
-  // State variables for categories and UI control
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -30,12 +26,10 @@ export function Categories() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Function to fetch categories from the database
   async function fetchCategories() {
     try {
       const { data, error } = await supabase
@@ -56,7 +50,6 @@ export function Categories() {
     }
   }
 
-  // Toggle the expansion of a category
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => {
       const next = new Set(prev);
@@ -69,13 +62,11 @@ export function Categories() {
     });
   };
 
-  // Open the edit modal for a selected category
   const handleEditCategory = (category: Category) => {
     setSelectedCategory(category);
     setIsEditModalOpen(true);
   };
 
-  // Handle category deletion
   const handleDeleteCategory = async (id: string) => {
     try {
       // Check if category has items
@@ -117,7 +108,6 @@ export function Categories() {
     }
   };
 
-  // Get the CSS class for the category color
   const getColorClass = (color: string) => {
     const colors = {
       blue: 'bg-blue-100 text-blue-800',
@@ -130,7 +120,6 @@ export function Categories() {
     return colors[color] || colors.blue;
   };
 
-  // Render the category tree recursively
   const renderCategoryTree = (parentId: string | null = null, level = 0) => {
     const categoryItems = categories.filter(c => c.parent_id === parentId);
     
