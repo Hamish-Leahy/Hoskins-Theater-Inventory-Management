@@ -15,6 +15,7 @@ import { Maintenance } from './pages/Maintenance';
 import { Reports } from './pages/Reports';
 import { AdminPortal } from './pages/AdminPortal';
 import { ShowArchive } from './pages/ShowArchive';
+import { NotFound } from './components/NotFound';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
                         <Route path="/show-archive" element={<ShowArchive />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/admin" element={<AdminPortal />} />
+                        <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>
                   </div>

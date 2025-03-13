@@ -14,13 +14,16 @@ import {
   Clock,
   AlertCircle,
   Trash2,
-  AlertOctagon
+  AlertOctagon,
+  FileEdit,
+  Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 import { AddShowModal } from '../components/AddShowModal';
 import { AssignItemsModal } from '../components/AssignItemsModal';
 import { UploadFilesModal } from '../components/UploadFilesModal';
+import { ShowDocumentModal } from '../components/ShowDocumentModal';
 
 type Show = {
   id: string;
@@ -54,17 +57,35 @@ type ShowItem = {
   status: string;
 };
 
+type ShowDocument = {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  last_edited_by: string;
+  _count?: {
+    collaborators: number;
+  };
+};
+
 export function ShowArchive() {
   const [shows, setShows] = useState<Show[]>([]);
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [showFiles, setShowFiles] = useState<ShowFile[]>([]);
   const [showItems, setShowItems] = useState<ShowItem[]>([]);
+  const [showDocuments, setShowDocuments] = useState<ShowDocument[]>([]);
   const [isAddShowModalOpen, setIsAddShowModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isAssignItemModalOpen, setIsAssignItemModalOpen] = useState(false);
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<ShowDocument | null>(null);
+  const [documentMode, setDocumentMode] = useState<'create' | 'edit'>('create');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   useEffect(() => {
     fetchShows();
@@ -74,6 +95,7 @@ export function ShowArchive() {
     if (selectedShow) {
       fetchShowFiles(selectedShow.id);
       fetchShowItems(selectedShow.id);
+      fetchShowDocuments(selectedShow.id);
     }
   }, [selectedShow]);
 
@@ -131,6 +153,24 @@ export function ShowArchive() {
     }
   }
 
+  async function fetchShowDocuments(showId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('show_documents')
+        .select(`
+          *,
+          document_collaborators (count)
+        `)
+        .eq('show_id', showId)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setShowDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching show documents:', error);
+    }
+  }
+
   const handleUnassignItem = async (itemId: string) => {
     if (!selectedShow) return;
     
@@ -147,7 +187,6 @@ export function ShowArchive() {
 
       if (error) throw error;
       
-      // Refresh show items
       fetchShowItems(selectedShow.id);
     } catch (error) {
       console.error('Error unassigning item:', error);
@@ -192,6 +231,33 @@ export function ShowArchive() {
     }
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('show_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      if (selectedShow) {
+        fetchShowDocuments(selectedShow.id);
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleEditDocument = (document: ShowDocument) => {
+    setSelectedDocument(document);
+    setDocumentMode('edit');
+    setIsDocumentModalOpen(true);
+  };
+
   const filteredShows = shows.filter(show =>
     show.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     show.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -216,6 +282,27 @@ export function ShowArchive() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getDocumentTypeColor = (type: string) => {
+    switch (type) {
+      case 'rehearsal_notes':
+        return 'bg-purple-100 text-purple-800';
+      case 'tech_notes':
+        return 'bg-blue-100 text-blue-800';
+      case 'production_notes':
+        return 'bg-green-100 text-green-800';
+      case 'design_notes':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDocumentTypeName = (type: string) => {
+    return type.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   };
 
   return (
@@ -332,6 +419,17 @@ export function ShowArchive() {
                   {isAdmin && (
                     <div className="flex space-x-3">
                       <button
+                        onClick={() => {
+                          setDocumentMode('create');
+                          setSelectedDocument(null);
+                          setIsDocumentModalOpen(true);
+                        }}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        New Document
+                      </button>
+                      <button
                         onClick={() => setIsUploadModalOpen(true)}
                         className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                       >
@@ -345,6 +443,65 @@ export function ShowArchive() {
                         <Package className="h-4 w-4 mr-2" />
                         Assign Items
                       </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Shared Documents */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Shared Documents
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {showDocuments.map((document) => (
+                    <div
+                      key={document.id}
+                      className="border rounded-lg p-4 hover:bg-gray-50"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center">
+                          <FileText className="h-8 w-8 text-blue-500" />
+                          <div className="ml-3">
+                            <h4 className="text-sm font-medium text-gray-900">
+                              {document.title}
+                            </h4>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getDocumentTypeColor(document.type)}`}>
+                              {getDocumentTypeName(document.type)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditDocument(document)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <FileEdit className="h-5 w-5" />
+                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteDocument(document.id)}
+                              className="text-gray-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-1" />
+                          {document._count?.collaborators || 1} collaborator(s)
+                        </div>
+                        <span>
+                          Updated {format(new Date(document.updated_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {showDocuments.length === 0 && (
+                    <div className="col-span-2 text-center py-8 text-gray-500">
+                      No documents yet
                     </div>
                   )}
                 </div>
@@ -485,6 +642,22 @@ export function ShowArchive() {
               setIsUploadModalOpen(false);
             }}
             showId={selectedShow.id}
+          />
+
+          <ShowDocumentModal
+            isOpen={isDocumentModalOpen}
+            onClose={() => {
+              setIsDocumentModalOpen(false);
+              setSelectedDocument(null);
+            }}
+            onSuccess={() => {
+              fetchShowDocuments(selectedShow.id);
+              setIsDocumentModalOpen(false);
+              setSelectedDocument(null);
+            }}
+            showId={selectedShow.id}
+            document={selectedDocument || undefined}
+            mode={documentMode}
           />
         </>
       )}
