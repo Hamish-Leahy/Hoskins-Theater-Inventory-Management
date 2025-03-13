@@ -114,6 +114,7 @@ src/
 3. Commit your changes
 4. Push to the branch
 5. Open a Pull Request
+6. I will review your pull request as soon as possible and let you know the deicision i have made
 
 ## License
 
