@@ -17,6 +17,7 @@ import { AdminPortal } from './pages/AdminPortal';
 import { ShowArchive } from './pages/ShowArchive';
 import { NotFound } from './components/NotFound';
 
+// Import new functions
 function App() {
   return (
     <AuthProvider>
