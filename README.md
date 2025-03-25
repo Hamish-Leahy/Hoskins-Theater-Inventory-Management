@@ -1,6 +1,6 @@
 # Hoskins Theatre Inventory Management System
 
-A comprehensive inventory management system for The Armidale School's Hoskins Theatre, built with React, Supabase, and Tailwind CSS. - Hamish Leahy
+A comprehensive inventory management system for The Armidale School's Hoskins Theatre, built with React, Supabase, and Tailwind CSS. - 
 
 
 ![TAS Logo](https://as.edu.au/wp-content/webp-express/webp-images/uploads/2025/01/TAS_Logo_Horiz_Straw_PMS-713x375.png.webp)
