@@ -16,14 +16,12 @@ export function Dashboard() {
 
   async function fetchStats() {
     try {
-      // Get total items
       const { data: items, error: itemsError } = await supabase
         .from('items')
         .select('id');
       
       if (itemsError) throw itemsError;
 
-      // Get maintenance due count
       const { data: maintenance, error: maintenanceError } = await supabase
         .from('maintenance_logs')
         .select('id')
@@ -31,7 +29,6 @@ export function Dashboard() {
 
       if (maintenanceError) throw maintenanceError;
 
-      // Get checked out items
       const { data: checkouts, error: checkoutsError } = await supabase
         .from('checkouts')
         .select('id')
