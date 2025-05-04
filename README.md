@@ -37,7 +37,6 @@ A comprehensive inventory management system for The Armidale School's Hoskins Th
   - Check-out logs
 
 ## Tech Stack
-
 - **Frontend**
   - React 18
   - TypeScript
@@ -45,12 +44,12 @@ A comprehensive inventory management system for The Armidale School's Hoskins Th
   - Lucide React Icons
   - React Router DOM
   - React Hook Form
-
 - **Backend**
   - Supabase (PostgreSQL)
   - Row Level Security
   - Real-time subscriptions
   - Storage for files
+  - Encryption on a rest storage
 
 ## Getting Started
 
