@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-// new features goes here
+
 
 type CategoryForm = {
   name: string;
